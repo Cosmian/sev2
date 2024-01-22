@@ -6,7 +6,7 @@
 //!
 //! ## SEV APIs
 //!
-//! The Linux kernel exposes two technically distinct AMD SEV APIs:
+//! The linux kernel exposes two technically distinct AMD SEV APIs:
 //!
 //! 1. An API for managing the SEV platform itself
 //! 2. An API for managing SEV-enabled KVM virtual machines
@@ -16,7 +16,7 @@
 //!
 //! ## SNP ABIs
 //!
-//! Like SEV, the Linux kernel exposes another two different AMD SEV-SNP ABIs:
+//! Like SEV, the linux kernel exposes another two different AMD SEV-SNP ABIs:
 //!
 //! 1. An ABI for managing the SEV-SNP platform itself
 //! 2. An ABI for managing SEV-SNP enabled KVM virtual machines
@@ -57,7 +57,7 @@
 //!
 //! ## Remarks
 //!
-//! Note that the Linux kernel provides access to these APIs through a set
+//! Note that the linux kernel provides access to these APIs through a set
 //! of `ioctl`s that are meant to be called on device nodes (`/dev/kvm` and
 //! `/dev/sev`, to be specific). As a result, these `ioctl`s form the substrate
 //! of the `sev` crate. Binaries that result from consumers of this crate are
@@ -93,7 +93,11 @@ pub mod certs;
 pub mod firmware;
 #[cfg(target_os = "linux")]
 pub mod launch;
-#[cfg(all(any(feature = "sev", feature = "snp"), feature = "openssl"))]
+#[cfg(all(
+    any(feature = "sev", feature = "snp"),
+    feature = "openssl",
+    target_os = "linux"
+))]
 pub mod measurement;
 #[cfg(all(target_os = "linux", feature = "openssl", feature = "sev"))]
 pub mod session;
@@ -115,7 +119,7 @@ use certs::sev::ca::{Certificate, Chain as CertSevCaChain};
 #[cfg(all(feature = "sev", feature = "openssl"))]
 use certs::sev::builtin as SevBuiltin;
 
-#[cfg(feature = "sev")]
+#[cfg(all(feature = "sev", target_os = "linux"))]
 use crate::{certs::sev::sev::Certificate as SevCertificate, error::Indeterminate, launch::sev::*};
 
 #[cfg(all(feature = "sev", feature = "openssl"))]
@@ -123,7 +127,7 @@ use std::convert::TryFrom;
 
 use std::io::{Read, Write};
 
-#[cfg(feature = "sev")]
+#[cfg(all(feature = "sev", target_os = "linux"))]
 use std::{
     collections::HashMap,
     io,
@@ -136,7 +140,7 @@ use std::{
     sync::Mutex,
 };
 
-#[cfg(feature = "sev")]
+#[cfg(all(feature = "sev", target_os = "linux"))]
 use lazy_static::lazy_static;
 
 use serde::{Deserialize, Serialize};
@@ -310,7 +314,7 @@ impl TryFrom<&sev::Chain> for Generation {
 
 // The C FFI interface to the library.
 
-#[cfg(feature = "sev")]
+#[cfg(all(feature = "sev", target_os = "linux"))]
 lazy_static! {
     static ref INIT_MAP: Mutex<HashMap<RawFd, Launcher<New, RawFd, RawFd>>> =
         Mutex::new(HashMap::new());
@@ -322,7 +326,7 @@ lazy_static! {
         Mutex::new(HashMap::new());
 }
 
-#[cfg(feature = "sev")]
+#[cfg(all(feature = "sev", target_os = "linux"))]
 fn set_fw_err(ptr: *mut c_int, err: io::Error) {
     unsafe { *ptr = Indeterminate::from(err).into() };
 }
@@ -333,7 +337,7 @@ fn set_fw_err(ptr: *mut c_int, err: io::Error) {
 ///
 /// The caller of this function is responsible for ensuring that the pointer arguments are
 /// valid.
-#[cfg(feature = "sev")]
+#[cfg(all(feature = "sev", target_os = "linux"))]
 #[no_mangle]
 pub unsafe extern "C" fn sev_init(vm_fd: c_int, sev_fd: c_int, fw_err: *mut c_int) -> c_int {
     let vm: RawFd = vm_fd;
@@ -359,7 +363,7 @@ pub unsafe extern "C" fn sev_init(vm_fd: c_int, sev_fd: c_int, fw_err: *mut c_in
 ///
 /// The caller of this function is responsible for ensuring that the pointer arguments are
 /// valid.
-#[cfg(feature = "sev")]
+#[cfg(all(feature = "sev", target_os = "linux"))]
 #[no_mangle]
 pub unsafe extern "C" fn sev_es_init(vm_fd: c_int, sev_fd: c_int, fw_err: *mut c_int) -> c_int {
     let vm: RawFd = vm_fd;
@@ -385,7 +389,7 @@ pub unsafe extern "C" fn sev_es_init(vm_fd: c_int, sev_fd: c_int, fw_err: *mut c
 ///
 /// The caller of this function is responsible for ensuring that the pointer arguments are
 /// valid.
-#[cfg(feature = "sev")]
+#[cfg(all(feature = "sev", target_os = "linux"))]
 #[no_mangle]
 pub unsafe extern "C" fn sev_launch_start(
     vm_fd: c_int,
@@ -431,7 +435,7 @@ pub unsafe extern "C" fn sev_launch_start(
 ///
 /// The caller of this function is responsible for ensuring that the pointer arguments are
 /// valid.
-#[cfg(feature = "sev")]
+#[cfg(all(feature = "sev", target_os = "linux"))]
 #[no_mangle]
 pub unsafe extern "C" fn sev_launch_update_data(
     vm_fd: c_int,
@@ -460,7 +464,7 @@ pub unsafe extern "C" fn sev_launch_update_data(
 ///
 /// The caller of this function is responsible for ensuring that the pointer arguments are
 /// valid.
-#[cfg(feature = "sev")]
+#[cfg(all(feature = "sev", target_os = "linux"))]
 #[no_mangle]
 pub unsafe extern "C" fn sev_launch_update_vmsa(vm_fd: c_int, fw_err: *mut c_int) -> c_int {
     let mut map = STARTED_MAP.lock().unwrap();
@@ -486,7 +490,7 @@ pub unsafe extern "C" fn sev_launch_update_vmsa(vm_fd: c_int, fw_err: *mut c_int
 ///
 /// The "measurement_data" argument should be a valid pointer able to hold the meausurement's
 /// bytes. The measurement is 48 bytes in size.
-#[cfg(feature = "sev")]
+#[cfg(all(feature = "sev", target_os = "linux"))]
 #[no_mangle]
 pub unsafe extern "C" fn sev_launch_measure(
     vm_fd: c_int,
@@ -533,7 +537,7 @@ pub unsafe extern "C" fn sev_launch_measure(
 ///
 /// The caller of this function is responsible for ensuring that the pointer arguments are
 /// valid.
-#[cfg(feature = "sev")]
+#[cfg(all(feature = "sev", target_os = "linux"))]
 #[no_mangle]
 pub unsafe extern "C" fn sev_inject_launch_secret(
     vm_fd: c_int,
@@ -579,7 +583,7 @@ pub unsafe extern "C" fn sev_inject_launch_secret(
 ///
 /// The caller of this function is responsible for ensuring that the pointer arguments are
 /// valid.
-#[cfg(feature = "sev")]
+#[cfg(all(feature = "sev", target_os = "linux"))]
 #[no_mangle]
 pub unsafe extern "C" fn sev_launch_finish(vm_fd: c_int, fw_err: *mut c_int) -> c_int {
     let mut map = MEASURED_MAP.lock().unwrap();
@@ -608,7 +612,7 @@ pub unsafe extern "C" fn sev_launch_finish(vm_fd: c_int, fw_err: *mut c_int) -> 
 ///
 /// The caller of this function is responsible for ensuring that the pointer arguments are
 /// valid.
-#[cfg(feature = "sev")]
+#[cfg(all(feature = "sev", target_os = "linux"))]
 #[allow(unused_assignments)]
 #[no_mangle]
 pub unsafe extern "C" fn sev_attestation_report(
