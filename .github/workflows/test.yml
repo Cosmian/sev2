@@ -50,6 +50,7 @@ jobs:
         runner:
           - ubuntu-latest
           - macos-12
+          - windows-latest
         toolchain:
           - nightly
           - beta
