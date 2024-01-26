@@ -2,7 +2,7 @@
 
 #![cfg(feature = "openssl")]
 
-#[cfg(feature = "snp")]
+#[cfg(all(target_os = "linux", feature = "snp"))]
 mod snp_tests {
     use sev::measurement::{snp::*, vmsa::VMMType};
     // Testing if we can generate a good OVMF hash
@@ -200,7 +200,7 @@ mod snp_tests {
     }
 }
 
-#[cfg(feature = "sev")]
+#[cfg(all(target_os = "linux", feature = "sev"))]
 mod sev_tests {
     use sev::measurement::sev::*;
     // test regular sev-es
