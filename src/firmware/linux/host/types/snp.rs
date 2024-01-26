@@ -318,6 +318,7 @@ mod test {
         }
 
         #[test]
+        #[cfg(target_os = "linux")]
         fn test_uapi_to_vec_bytes() {
             let expected: Vec<u8> = vec![
                 192, 180, 6, 164, 168, 3, 73, 82, 151, 67, 63, 182, 1, 76, 208, 174, 120, 0, 0, 0,
