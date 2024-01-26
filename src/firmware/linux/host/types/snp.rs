@@ -317,6 +317,7 @@ mod test {
             ]
         }
 
+        #[cfg(target_os = "linux")]
         #[test]
         #[cfg(target_os = "linux")]
         fn test_uapi_to_vec_bytes() {
